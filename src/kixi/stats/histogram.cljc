@@ -45,8 +45,6 @@
 
 (defn get-count-at-index
   [{:keys [counts-len counts]} index]
-  (when (>= index counts-len)
-    (throw (IndexOutOfBoundsException.)))
   (get counts index 0))
 
 (defn get-count-at-value
@@ -168,7 +166,8 @@
             (let [value-at-index (get-value-from-index hist index)
                   median-equivalent (median-equivalent-value hist value-at-index)]
               (+ acc (* median-equivalent count))))]
-    (double (/ (reduce f 0 counts) total-count))))
+    (when (pos? total-count)
+      (double (/ (reduce f 0 counts) total-count)))))
 
 (defn get-stddev-value
   [{:keys [counts total-count] :as hist}]
@@ -212,3 +211,16 @@
        :bucket-count bucket-count
        :counts-len (* (inc bucket-count)
                       (floor-div sub-bucket-count 2))}))))
+
+(defn int-histogram
+  [lowest-trackable-value
+   highest-trackable-value
+   signficant-figures]
+  (fn
+    ([]
+     (histogram lowest-trackable-value
+                highest-trackable-value
+                signficant-figures))
+    ([acc x]
+     (do-record-value acc x))
+    ([acc] acc)))

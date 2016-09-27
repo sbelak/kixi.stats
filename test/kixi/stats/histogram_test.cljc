@@ -1,7 +1,18 @@
 (ns kixi.stats.histogram-test
   (:require [kixi.stats.histogram :as sut]
-            #?(:clj [clojure.test :as t :refer [deftest is]]
-               :cljs [cljs.test :as t :include-macros true :refer [deftest is]])))
+            [clojure.test.check.generators :as gen]
+            [clojure.test.check.properties :as prop]
+            [kixi.stats.test-utils :refer [=ish]]
+            #?@(:clj [[clojure.test :as t :refer [deftest is]]
+                      [clojure.test.check.clojure-test :refer [defspec]]
+                      [clojure.test.check.properties :refer [for-all]]]
+                :cljs [[cljs.test :as t :include-macros true :refer [deftest is]]
+                       [clojure.test.check.clojure-test :refer-macros [defspec]]
+                       [clojure.test.check.properties :refer-macros [for-all]]]))
+  (:import [org.HdrHistogram Histogram]))
+
+(def test-opts {:num-tests 100
+                :par       4})
 
 (defn equivalent? [hist a b]
   (sut/values-are-equivalent? hist a b))
@@ -116,3 +127,21 @@
     (is (= (* 1024 10004) (sut/median-equivalent-value hist (* 1024 10007))))
     (is (verified-maximum? hist))))
 
+(defn histogram'
+  [xs]
+  (let [f (fn [hist x] (doto hist (.recordValue x)))]
+    (reduce f (Histogram. 1 1000 3) xs)))
+
+(defspec percentile-spec
+  test-opts
+  (for-all [xs (gen/vector gen/pos-int)
+            pc (gen/choose 0 100)]
+           (is (= (sut/value-at-percentile (transduce identity (sut/int-histogram 1 1000 3) xs) pc)
+                  (.getValueAtPercentile (histogram' xs) pc)))))
+
+(defspec mean-spec
+  test-opts
+  (for-all [xs (gen/vector gen/pos-int)]
+           (is (=ish (sut/get-mean-value (transduce identity (sut/int-histogram 1 1000 3) xs))
+                     (when (seq xs)
+                       (.getMean (histogram' xs)))))))
