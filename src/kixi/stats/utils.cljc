@@ -1,5 +1,27 @@
 (ns kixi.stats.utils)
 
+(def max-int
+  Long/MAX_VALUE)
+
+(defn clz
+  [value]
+  (Long/numberOfLeadingZeros value))
+
+(defn log
+  [x]
+  #?(:clj  (Math/log x)
+     :cljs (js/Math.log x)))
+
+(defn floor
+  [x]
+  #?(:clj  (Math/floor x)
+     :cljs (js/Math.floor x)))
+
+(defn ceil
+  [x]
+  #?(:clj  (Math/ceil x)
+     :cljs (js/Math.ceil x)))
+
 (defn sqrt [x]
   #?(:clj  (Math/sqrt x)
      :cljs (js/Math.sqrt x)))

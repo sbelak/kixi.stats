@@ -10,7 +10,9 @@
                              [org.clojure/test.check "0.9.0"]]
               :plugins [[lein-cljsbuild "1.1.3"]
                         [lein-codox "0.9.4"]
-                        [lein-doo "0.1.6"]]}}
+                        [lein-doo "0.1.6"]
+                        [lein-auto "0.1.2"]]}}
+  :auto {:default {:file-pattern #"\.(clj|cljs|cljc)$"}}
   :codox {:namespaces [kixi.stats.core]
           :project {:name "kixi.stats"}
           :source-uri "https://github.com/MastodonC/kixi.stats/blob/v0.1.2/{filepath}#L{line}"}
