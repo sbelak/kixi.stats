@@ -26,7 +26,7 @@
     (= computed-max (sut/maximum hist))))
 
 (deftest empty-histogram
-  (let [hist (sut/histogram 3)]
+  (let [hist (sut/histogram* 3)]
     (is nil? (sut/minimum hist))
     (is nil? (sut/maximum hist))))
 
@@ -34,18 +34,18 @@
 (def significant-value-digits 3)
 
 (deftest record-value
-  (let [hist (-> (sut/histogram highest-trackable-value significant-value-digits)
+  (let [hist (-> (sut/histogram* highest-trackable-value significant-value-digits)
                  (sut/do-record-value 4))]
     (is (= 1 (:total-count hist)))
     (is (= 1 (sut/get-count-at-value hist 4)))))
 
 (deftest overflow-throws-exception
-  (let [hist (sut/histogram highest-trackable-value 3)]
+  (let [hist (sut/histogram* highest-trackable-value 3)]
     (is (thrown? IndexOutOfBoundsException
                  (sut/do-record-value hist (* 3 highest-trackable-value))))))
 
 (deftest large-numbers []
-  (let [hist (-> (sut/histogram 20000000 100000000 5)
+  (let [hist (-> (sut/histogram* 20000000 100000000 5)
                  (sut/do-record-value 100000000)
                  (sut/do-record-value 20000000)
                  (sut/do-record-value 30000000))]
@@ -60,7 +60,7 @@
     (is (verified-maximum? hist))))
 
 (deftest size-of-equivalent-value-range
-  (let [hist (sut/histogram highest-trackable-value significant-value-digits)]
+  (let [hist (sut/histogram* highest-trackable-value significant-value-digits)]
     (is (= 1 (sut/equivalent-value-range hist 1)))
     (is (= 2 (sut/equivalent-value-range hist 2500)))
     (is (= 4 (sut/equivalent-value-range hist 8191)))
@@ -69,7 +69,7 @@
     (is (verified-maximum? hist))))
 
 (deftest scaled-size-of-equivalent-value-range
-  (let [hist (sut/histogram 1024 highest-trackable-value significant-value-digits)]
+  (let [hist (sut/histogram* 1024 highest-trackable-value significant-value-digits)]
     (is (= (* 1024 1) (sut/equivalent-value-range hist (* 1024 1))))
     (is (= (* 1024 2) (sut/equivalent-value-range hist (* 1024 2500))))
     (is (= (* 1024 4) (sut/equivalent-value-range hist (* 1024 8191))))
@@ -78,19 +78,19 @@
     (is (verified-maximum? hist))))
 
 (deftest lowest-equivalent-value
-  (let [hist (sut/histogram highest-trackable-value significant-value-digits)]
+  (let [hist (sut/histogram* highest-trackable-value significant-value-digits)]
     (is (= 10000 (sut/lowest-equivalent-value hist 10007)))
     (is (= 10008 (sut/lowest-equivalent-value hist 10009)))
     (is (verified-maximum? hist))))
 
 (deftest scaled-lowest-equivalent-value
-  (let [hist (sut/histogram 1024 highest-trackable-value significant-value-digits)]
+  (let [hist (sut/histogram* 1024 highest-trackable-value significant-value-digits)]
     (is (= (* 1024 10000) (sut/lowest-equivalent-value hist (* 1024 10007))))
     (is (= (* 1024 10008) (sut/lowest-equivalent-value hist (* 1024 10009))))
     (is (verified-maximum? hist))))
 
 (deftest highest-equivalent-value
-  (let [hist (sut/histogram highest-trackable-value significant-value-digits)]
+  (let [hist (sut/histogram* highest-trackable-value significant-value-digits)]
     (is (= 8183  (sut/highest-equivalent-value hist 8180)))
     (is (= 8191  (sut/highest-equivalent-value hist 8191)))
     (is (= 8199  (sut/highest-equivalent-value hist 8193)))
@@ -100,7 +100,7 @@
     (is (verified-maximum? hist))))
 
 (deftest scaled-highest-equivalent-value
-  (let [hist (sut/histogram 1024 highest-trackable-value significant-value-digits)]
+  (let [hist (sut/histogram* 1024 highest-trackable-value significant-value-digits)]
     (is (= (+ 1023 (* 1024 8183))  (sut/highest-equivalent-value hist (* 1024 8183))))
     (is (= (+ 1023 (* 1024 8191))  (sut/highest-equivalent-value hist (* 1024 8191))))
     (is (= (+ 1023 (* 1024 8199))  (sut/highest-equivalent-value hist (* 1024 8199))))
@@ -110,7 +110,7 @@
     (is (verified-maximum? hist))))
 
 (deftest median-equivalent-value
-  (let [hist (sut/histogram highest-trackable-value significant-value-digits)]
+  (let [hist (sut/histogram* highest-trackable-value significant-value-digits)]
     (is (= 4 (sut/median-equivalent-value hist 4)))
     (is (= 5 (sut/median-equivalent-value hist 5)))
     (is (= 4001 (sut/median-equivalent-value hist 4000)))
@@ -119,7 +119,7 @@
     (is (verified-maximum? hist))))
 
 (deftest scaled-median-equivalent-value
-  (let [hist (sut/histogram 1024 highest-trackable-value significant-value-digits)]
+  (let [hist (sut/histogram* 1024 highest-trackable-value significant-value-digits)]
     (is (= (+ 512 (* 1024 4)) (sut/median-equivalent-value hist (* 1024 4))))
     (is (= (+ 512 (* 1024 5)) (sut/median-equivalent-value hist (* 1024 5))))
     (is (= (* 1024 4001) (sut/median-equivalent-value hist (* 1024 4000))))

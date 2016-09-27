@@ -179,12 +179,12 @@
     (sqrt (/ (reduce f 0 counts)
              total-count))))
 
-(defn histogram
+(defn histogram*
   ([significant-figures]
-   (histogram 1 2 significant-figures))
+   (histogram* 1 2 significant-figures))
   ([highest-trackable-value
     significant-figures]
-   (histogram 1 highest-trackable-value significant-figures))
+   (histogram* 1 highest-trackable-value significant-figures))
   ([lowest-trackable-value
      highest-trackable-value
     significant-figures]
@@ -218,9 +218,9 @@
    signficant-figures]
   (fn
     ([]
-     (histogram lowest-trackable-value
-                highest-trackable-value
-                signficant-figures))
+     (histogram* lowest-trackable-value
+                 highest-trackable-value
+                 signficant-figures))
     ([acc x]
      (do-record-value acc x))
     ([acc] acc)))
