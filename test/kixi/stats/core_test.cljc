@@ -3,7 +3,7 @@
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
             [kixi.stats.core :as kixi]
-            [kixi.stats.utils :refer [sq pow sqrt]]
+            [kixi.stats.utils :refer [sq pow sqrt root]]
             #?@(:cljs
                 [[clojure.test.check.clojure-test :refer-macros [defspec]]
                  [clojure.test.check.properties :refer-macros [for-all]]
@@ -35,16 +35,33 @@
 
 (def =ish
   "Almost equal"
-  (partial approx= 0.0000001))
+  (partial approx= 0.000001))
 
 (defn each? [pred & colls]
   (not-any? false? (apply map pred colls)))
 
-(defn mean'
+(defn arithmetic-mean'
   [coll]
   (let [c (count coll)]
     (when (pos? c)
       (/ (reduce + coll) c))))
+
+(defn geometric-mean'
+  [coll]
+  (let [c (count coll)]
+    (when (and (pos? c) (every? (complement neg?) coll))
+      (root (reduce * coll) c))))
+
+(defn harmonic-mean'
+  [coll]
+  (let [reciprocal #(/ 1 %)
+        c (count coll)
+        s (if (some zero? coll)
+            0.0
+            (reduce + (map reciprocal coll)))]
+    (when-not (zero? c)
+      (if (zero? s)
+        0.0 (/ c s)))))
 
 (defn variance'
   [coll]
@@ -53,7 +70,7 @@
       (let [c' (dec c)]
         (if (pos? c')
           (/ (->> coll
-                  (map #(sq (- % (mean' coll))))
+                  (map #(sq (- % (arithmetic-mean' coll))))
                   (reduce +))
              c')
           0)))))
@@ -63,7 +80,7 @@
   (let [c (count coll)]
     (when (pos? c)
       (/ (->> coll
-              (map #(sq (- % (mean' coll))))
+              (map #(sq (- % (arithmetic-mean' coll))))
               (reduce +))
          (count coll)))))
 
@@ -74,7 +91,7 @@
       (let [c' (dec c)]
         (if (pos? c')
           (sqrt (/ (->> coll
-                        (map #(sq (- % (mean' coll))))
+                        (map #(sq (- % (arithmetic-mean' coll))))
                         (reduce +))
                    c' c))
           0)))))
@@ -84,8 +101,8 @@
   (let [coll' (filter fx (filter fy coll))]
     (if (empty? coll')
       nil
-      (let [mean-x (mean' (map fx coll'))
-            mean-y (mean' (map fy coll'))]
+      (let [mean-x (arithmetic-mean' (map fx coll'))
+            mean-y (arithmetic-mean' (map fy coll'))]
         (/ (reduce + (map #(* (- (fx %) mean-x)
                               (- (fy %) mean-y))
                           coll'))
@@ -107,8 +124,8 @@
     (when-not (empty? coll')
       (let [xs (map fx coll')
             ys (map fy coll')
-            mx (mean' xs)
-            my (mean' ys)
+            mx (arithmetic-mean' xs)
+            my (arithmetic-mean' ys)
             mxs (map #(- % mx) xs)
             mys (map #(- % my) ys)]
         (let [d (sqrt (* (reduce + (map * mxs mxs))
@@ -131,8 +148,8 @@
     (when-not (empty? coll')
       (let [xs (map fx coll')
             ys (map fy coll')
-            mx (mean' xs)
-            my (mean' ys)
+            mx (arithmetic-mean' xs)
+            my (arithmetic-mean' ys)
             vx (pvariance' xs)
             vxy (covariance' fx fy coll')]
         (when-not (zero? vx)
@@ -146,8 +163,8 @@
       (let [c (count coll')
             xs (map fx coll')
             ys (map fy coll')
-            mx (mean' xs)
-            my (mean' ys)
+            mx (arithmetic-mean' xs)
+            my (arithmetic-mean' ys)
             ssx (reduce + (map #(sq (- % mx)) xs))
             ssy (reduce + (map #(sq (- % my)) ys))
             ssxy (reduce + (map #(* (- %1 mx) (- %2 my)) xs ys))]
@@ -162,8 +179,8 @@
       (let [c (count coll')
             xs (map fx coll')
             ys (map fy coll')
-            mx (mean' xs)
-            my (mean' ys)
+            mx (arithmetic-mean' xs)
+            my (arithmetic-mean' ys)
             ssx (reduce + (map #(sq (- % mx)) xs))
             ssy (reduce + (map #(sq (- % my)) ys))
             ssxy (reduce + (map #(* (- %1 mx) (- %2 my)) xs ys))]
@@ -173,7 +190,7 @@
 
 (defn skewness'
   [coll]
-  (let [m (mean' coll)
+  (let [m (arithmetic-mean' coll)
         n (count coll)
         d (* (pow (reduce + (map #(pow (- % m) 2) coll)) 1.5)
              (- n 2))]
@@ -184,15 +201,15 @@
 
 (defn pskewness'
   [coll]
-  (let [m (mean' coll)
+  (let [m (arithmetic-mean' coll)
         v (pvariance' coll)]
     (when-not (or (nil? v) (zero? v))
       (let [s (sqrt v)]
-        (mean' (map #(pow (/ (- % m) s) 3) coll))))))
+        (arithmetic-mean' (map #(pow (/ (- % m) s) 3) coll))))))
 
 (defn kurtosis'
   [coll]
-  (let [m (mean' coll)
+  (let [m (arithmetic-mean' coll)
         n (count coll)
         v (variance' coll)]
     (when-not (or (nil? v) (zero? v) (< n 4))
@@ -203,7 +220,7 @@
 
 (defn pkurtosis'
   [coll]
-  (let [m (mean' coll)
+  (let [m (arithmetic-mean' coll)
         n (count coll)
         d (reduce + (map #(sq (- % m)) coll))]
     (when-not (zero? d)
@@ -228,14 +245,34 @@
 (deftest count-test
   (is (zero? (transduce identity kixi/count []))))
 
-(defspec mean-spec
+(defspec arithmetic-mean-spec
   test-opts
   (for-all [xs (gen/vector numeric)]
-           (is (=ish (transduce identity kixi/mean xs)
-                     (mean' xs)))))
+           (is (=ish (transduce identity kixi/arithmetic-mean xs)
+                     (arithmetic-mean' xs)))))
 
-(deftest mean-test
-  (is (nil? (transduce identity kixi/mean []))))
+(deftest arithmetic-mean-test
+  (is (nil? (transduce identity kixi/arithmetic-mean []))))
+
+(defspec geometric-mean-spec
+  test-opts
+  (for-all [xs (gen/vector numeric)]
+           (is (=ish (transduce identity kixi/geometric-mean xs)
+                     (geometric-mean' xs)))))
+
+(deftest geometric-mean-test
+  (is (nil? (transduce identity kixi/geometric-mean [])))
+  (is (zero? (transduce identity kixi/geometric-mean [0])))
+  (is (nil? (transduce identity kixi/geometric-mean [-1]))))
+
+(defspec harmonic-mean-spec
+  test-opts
+  (for-all [xs (gen/vector numeric)]
+           (is (=ish (transduce identity kixi/harmonic-mean xs)
+                     (harmonic-mean' xs)))))
+
+(deftest harmonic-mean-test
+  (is (nil? (transduce identity kixi/harmonic-mean []))))
 
 (defspec variance-spec
   test-opts
