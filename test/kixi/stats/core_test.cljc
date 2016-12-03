@@ -46,6 +46,15 @@
     (when (pos? c)
       (/ (reduce + coll) c))))
 
+(defn median'
+  [coll]
+  (let [c (count coll)
+        sorted (sort coll)]
+    (when-not (zero? c)
+      (if (odd? c)
+        (nth sorted (/ (dec c) 2))
+        (mean' (take 2 (drop (dec (/ c 2)) sorted)))))))
+
 (defn variance'
   [coll]
   (let [c (count coll)]
@@ -236,6 +245,12 @@
 
 (deftest mean-test
   (is (nil? (transduce identity kixi/mean []))))
+
+(defspec median-test
+  test-opts
+  (for-all [xs (gen/vector numeric)]
+           (is (=ish (transduce identity (kixi/median {:compression 100}) xs)
+                     (median' xs)))))
 
 (defspec variance-spec
   test-opts

@@ -1,5 +1,6 @@
 (ns kixi.stats.core
   (:require [kixi.stats.utils :refer [sq sqrt pow somef post-complete]]
+            [kixi.stats.t-digest :as t-digest]
             [redux.core :refer [fuse-matrix]])
   (:refer-clojure :exclude [count]))
 
@@ -19,6 +20,8 @@
     ([[s c]]
      (when-not (zero? c)
        (/ s c)))))
+
+(def median t-digest/median)
 
 (def variance-s
   "Estimates an unbiased variance of numeric inputs."

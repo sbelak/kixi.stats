@@ -7,7 +7,8 @@
   :profiles {:dev
              {:dependencies [[org.clojure/clojure "1.8.0"]
                              [org.clojure/clojurescript "1.8.40"]
-                             [org.clojure/test.check "0.9.0"]]
+                             [org.clojure/test.check "0.9.0"]
+                             [com.tdunning/t-digest "3.1"]]
               :plugins [[lein-cljsbuild "1.1.3"]
                         [lein-codox "0.9.4"]
                         [lein-doo "0.1.6"]]}}
